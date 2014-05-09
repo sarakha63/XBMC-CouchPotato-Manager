@@ -20,7 +20,20 @@
 from xbmcswift2 import Plugin, xbmc, xbmcgui
 from resources.lib.api import \
     CouchPotatoApi, AuthenticationError, ConnectionError
+REMOTE_DBG = False
 
+# append pydev remote debugger
+if REMOTE_DBG:
+    # Make pydev debugger works for auto reload.
+    # Note pydevd module need to be copied in XBMC\system\python\Lib\pysrc
+    try:
+        import pysrc.pydevd as pydevd
+    # stdoutToServer and stderrToServer redirect stdout and stderr to eclipse console
+        pydevd.settrace('localhost', stdoutToServer=True, stderrToServer=True)
+    except ImportError:
+        sys.stderr.write("Error: " +
+            "You must add org.python.pydev.debug.pysrc to your PYTHONPATH.")
+        sys.exit(1)
 STRINGS = {
     # Root menu
     'all_movies': 30000,
@@ -239,7 +252,17 @@ def show_movies(status):
 
 @plugin.route('/movies/add/')
 def add_new_wanted():
-    if 'imdb_id' in plugin.request.args:
+    if 'imdb_id' in plugin.request.args:        
+        imdb_id = plugin.request.args['imdb_id'][0]
+        movielist=movie_list()
+        for movie in movielist:
+            if movie['identifiers']['imdb']==imdb_id:
+                if movie['status']=='active':
+                    stringnot=u' est déjà dans votre wanted list'
+                else:
+                    stringnot=u' est déjà dans votre bibliothèque'
+                xbmcgui.Dialog().notification(u'Déja dans Couh', u'Le film '+stringnot, xbmcgui.NOTIFICATION_INFO, 5000)
+                return
         imdb_id = plugin.request.args['imdb_id'][0]
         if imdb_id:
             return add_new_wanted_by_id(imdb_id)
@@ -254,7 +277,7 @@ def add_new_wanted():
             return
         items = [
             '%s %s' % (movie['titles'][0], 
-            	('(%s)' % movie['year']) if movie.get('year', False) else '')
+                ('(%s)' % movie['year']) if movie.get('year', False) else '')
             for movie in movies
         ]
         selected = xbmcgui.Dialog().select(
@@ -262,6 +285,15 @@ def add_new_wanted():
         )
         if selected >= 0:
             selected_movie = movies[selected]
+            movielist=movie_list()
+            for movie in movielist:
+                if movie['identifiers']['imdb']==selected_movie['imdb']:
+                    if movie['status']=='active':
+                        stringnot=u' est déjà dans votre wanted list'
+                    else:
+                        stringnot=u' est déjà dans votre bibliothèque'
+                    xbmcgui.Dialog().notification(u'Déja dans Couh', u'Le film '+stringnot, xbmcgui.NOTIFICATION_INFO, 5000)
+                    return
             profile_id = ask_profile()
             if profile_id:
                 success = api.add_wanted(
@@ -286,20 +318,29 @@ def add_new_wanted_by_id(imdb_id):
 
 def ask_profile():
     if not plugin.get_setting('default_profile', str):
+        askthreed = xbmcgui.Dialog().yesno(u"3D", u"Télécharger en 3D ?")
         profiles = api.get_profiles()
-        items = [profile['label'] for profile in profiles]
-        selected = xbmcgui.Dialog().select(
-            _('select_profile'), items
-        )
-        if selected == -1:
+        for profile in profiles:
+            if profile['label']=='Best':
+                profileBest=profile
+            elif profile['label']=='3D HD':
+                profileThreed=profile
+        if askthreed:
+            selected_profile=profileThreed
+        else:
+            selected_profile=profileBest
+        confirm = xbmcgui.Dialog().yesno(u"Confirmation", u"Confirmez-vous ?")
+        if confirm:
+            profile_id = selected_profile['_id']
+        else:
             return
-        selected_profile = profiles[selected]
-        profile_id = selected_profile['id']
     else:
         profile_id = plugin.get_setting('default_profile', int)
     return profile_id
 
-
+def movie_list():
+    movielist=api.get_movies()
+    return movielist
 @plugin.route('/movies/<library_id>/releases/')
 def show_releases(library_id):
 
@@ -434,7 +475,7 @@ def set_default_profile():
     )
     if selected >= 0:
         selected_profile = profiles[selected]
-        plugin.set_setting('default_profile', str(selected_profile['id']))
+        plugin.set_setting('default_profile', str(selected_profile['_id']))
     elif selected == -1:
         plugin.set_setting('default_profile', '')
 
