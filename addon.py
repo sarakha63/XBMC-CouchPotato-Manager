@@ -258,14 +258,30 @@ def add_new_wanted():
         for movie in movielist:
             if movie['identifiers']['imdb']==imdb_id:
                 if movie['status']=='active':
-                    stringnot=u' est déjà dans votre wanted list'
+                    try:
+                        profil=movie['profile_id']
+                        profiles = api.get_profiles()
+                        for profile in profiles:
+                            if profile['_id']==profil:
+                                profilemovie=profile['label']
+                        stringnot=movie['title']+u' est déjà dans votre wanted list en '+profilemovie
+                    except:
+                        stringnot=movie['title']+u' est déjà dans votre wanted list'
                 else:
-                    stringnot=u' est déjà dans votre bibliothèque'
-                xbmcgui.Dialog().notification(u'Déja dans Couh', u'Le film '+stringnot, xbmcgui.NOTIFICATION_INFO, 5000)
+                    try:
+                        if movie['releases'][0]['is_3d']:
+                            quality=u'3D'
+                        else:
+                            quality=movie['releases'][0]['quality']
+                        stringnot=movie['title']+u' est déjà dans votre bibliothèque en '+quality
+                    except:
+                        stringnot=movie['title']+u' est déjà dans votre bibliothèque'
+                xbmcgui.Dialog().notification(u'Déja dans CouchPotato', u'Le film '+stringnot, xbmcgui.NOTIFICATION_INFO, 5000)
                 return
         imdb_id = plugin.request.args['imdb_id'][0]
+        search_title = plugin.request.args['title'][0]
         if imdb_id:
-            return add_new_wanted_by_id(imdb_id)
+            return add_new_wanted_by_id(imdb_id,search_title)
     if 'title' in plugin.request.args:
         search_title = plugin.request.args['title'][0]
     else:
@@ -287,12 +303,26 @@ def add_new_wanted():
             selected_movie = movies[selected]
             movielist=movie_list()
             for movie in movielist:
-                if movie['identifiers']['imdb']==selected_movie['imdb']:
-                    if movie['status']=='active':
-                        stringnot=u' est déjà dans votre wanted list'
-                    else:
-                        stringnot=u' est déjà dans votre bibliothèque'
-                    xbmcgui.Dialog().notification(u'Déja dans Couh', u'Le film '+stringnot, xbmcgui.NOTIFICATION_INFO, 5000)
+                if movie['status']=='active':
+                    try:
+                        profil=movie['profile_id']
+                        profiles = api.get_profiles()
+                        for profile in profiles:
+                            if profile['_id']==profil:
+                                profilemovie=profile['label']
+                        stringnot=movie['title']+u' est déjà dans votre wanted list en '+profilemovie
+                    except:
+                        stringnot=movie['title']+u' est déjà dans votre wanted list'
+                else:
+                    try:
+                        if movie['releases'][0]['is_3d']:
+                            quality=u'3D'
+                        else:
+                            quality=movie['releases'][0]['quality']
+                        stringnot=movie['title']+u' est déjà dans votre bibliothèque en '+quality
+                    except:
+                        stringnot=movie['title']+u' est déjà dans votre bibliothèque'
+                    xbmcgui.Dialog().notification(u'Déja dans CouhchPotato', u'Le film '+stringnot, xbmcgui.NOTIFICATION_INFO, 5000)
                     return
             profile_id = ask_profile()
             if profile_id:
@@ -302,10 +332,12 @@ def add_new_wanted():
                 )
                 if success:
                     plugin.notify(msg=_('wanted_added'))
-
+                    xbmcgui.Dialog().notification(u'Ajouté', u'Le film '+movie['title']+u' a été ajouté à votre wanted list', xbmcgui.NOTIFICATION_INFO, 5000)
+                else:
+                    xbmcgui.Dialog().notification(u'Problème', u"Un problème est sruvenu lors de l'ajout de "+movie['title']+'. Consultez la log de CouchPotato', xbmcgui.NOTIFICATION_INFO, 5000)
 
 @plugin.route('/movies/add-by-id/<imdb_id>')
-def add_new_wanted_by_id(imdb_id):
+def add_new_wanted_by_id(imdb_id,title):
     profile_id = ask_profile()
     if profile_id:
         success = api.add_wanted(
@@ -314,6 +346,9 @@ def add_new_wanted_by_id(imdb_id):
         )
         if success:
             plugin.notify(msg=_('wanted_added'))
+            xbmcgui.Dialog().notification(u'Ajouté', u'Le film '+title+u' a été ajouté à votre wanted list', xbmcgui.NOTIFICATION_INFO, 5000)
+        else:
+            xbmcgui.Dialog().notification(u'Problème', u"Un problème est sruvenu lors de l'ajout de "+title+'. Consultez la log de CouchPotato', xbmcgui.NOTIFICATION_INFO, 5000)
 
 
 def ask_profile():
