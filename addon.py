@@ -350,7 +350,7 @@ def add_new_wanted():
                     movie_identifier=selected_movie['imdb']
                 )
                 if success:
-                    xbmcgui.Dialog().notification(u'Ajouté', u'Le film '+movie['title']+u' a été ajouté à votre wanted list', xbmcgui.NOTIFICATION_INFO, 5000)
+                    xbmcgui.Dialog().notification(u'Ajouté dans CouchPotato', u'Le film '+movie['title']+u' a été ajouté à votre wanted list', xbmcgui.NOTIFICATION_INFO, 5000)
                 else:
                     xbmcgui.Dialog().notification(u'Problème', u"Un problème est sruvenu lors de l'ajout de "+movie['title']+'. Consultez la log de CouchPotato', xbmcgui.NOTIFICATION_INFO, 5000)
         elif selected < 0:
