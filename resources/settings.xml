@@ -15,4 +15,7 @@
         <setting id="ba_username" type="text" label="30311" />
         <setting id="ba_password" type="text" label="30312" option="hidden" />
     </category>
+    <category label="General">
+    	<setting id="wanted_path" label="Repertoire ou placer la liste des films voulus si Couchpotato n'existe pas" type="folder" option="writeable" />
+    </category>
 </settings>

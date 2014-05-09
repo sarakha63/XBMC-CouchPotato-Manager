@@ -16,7 +16,8 @@
 #    You should have received a copy of the GNU General Public License
 #    along with this program. If not, see <http://www.gnu.org/licenses/>.
 #
-
+import xbmcaddon
+import os
 from xbmcswift2 import Plugin, xbmc, xbmcgui
 from resources.lib.api import \
     CouchPotatoApi, AuthenticationError, ConnectionError
@@ -88,7 +89,8 @@ YT_TRAILER_URL = (
 
 
 plugin = Plugin()
-
+addon = xbmcaddon.Addon()
+wantedpath = addon.getSetting('wanted_path')
 
 @plugin.cached()
 def get_status_list():
@@ -289,7 +291,23 @@ def add_new_wanted():
     if search_title:
         movies = api.search_wanted(search_title)
         if not movies:
-            plugin.notify(msg=_('no_movie_found'))
+            if not wantedpath:
+                xbmcgui.Dialog().notification(u'Répertoire manquant pour wanted list', u'Vous devez spécifiez un répertoire dans les options', xbmcgui.NOTIFICATION_INFO, 5000)
+            else:
+                alreadywanted=[]
+                if os.path.isfile(wantedpath+'\WANTEDMOVIE.txt'):
+                    LF=open(wantedpath+'\WANTEDMOVIE.txt', 'r')
+                    for line in LF:
+                        alreadywanted.append(line.replace('\n',''))
+                    LF.close()
+                if search_title in alreadywanted:
+                    xbmcgui.Dialog().notification('Déjà présent dans fichier wanted', search_title+' est déjà présent dans votre wanted list', xbmcgui.NOTIFICATION_INFO, 5000)
+                else:
+                    LF = open(wantedpath+'\WANTEDMOVIE.txt', 'a')
+                    strtowrite=search_title
+                    LF.write(strtowrite+'\n')
+                    LF.close()
+                    xbmcgui.Dialog().notification('Film ajouté dans fichier wanted', search_title+' ajouté dans votre wanted list', xbmcgui.NOTIFICATION_INFO, 5000)
             return
         items = [
             '%s %s' % (movie['titles'][0], 
@@ -303,27 +321,28 @@ def add_new_wanted():
             selected_movie = movies[selected]
             movielist=movie_list()
             for movie in movielist:
-                if movie['status']=='active':
-                    try:
-                        profil=movie['profile_id']
-                        profiles = api.get_profiles()
-                        for profile in profiles:
-                            if profile['_id']==profil:
-                                profilemovie=profile['label']
-                        stringnot=movie['title']+u' est déjà dans votre wanted list en '+profilemovie
-                    except:
-                        stringnot=movie['title']+u' est déjà dans votre wanted list'
-                else:
-                    try:
-                        if movie['releases'][0]['is_3d']:
-                            quality=u'3D'
-                        else:
-                            quality=movie['releases'][0]['quality']
-                        stringnot=movie['title']+u' est déjà dans votre bibliothèque en '+quality
-                    except:
-                        stringnot=movie['title']+u' est déjà dans votre bibliothèque'
-                    xbmcgui.Dialog().notification(u'Déja dans CouhchPotato', u'Le film '+stringnot, xbmcgui.NOTIFICATION_INFO, 5000)
-                    return
+                if movie['title'] in selected_movie['titles']:
+                    if movie['status']=='active':
+                        try:
+                            profil=movie['profile_id']
+                            profiles = api.get_profiles()
+                            for profile in profiles:
+                                if profile['_id']==profil:
+                                    profilemovie=profile['label']
+                            stringnot=movie['title']+u' est déjà dans votre wanted list en '+profilemovie
+                        except:
+                            stringnot=movie['title']+u' est déjà dans votre wanted list'
+                    else:
+                        try:
+                            if movie['releases'][0]['is_3d']:
+                                quality=u'3D'
+                            else:
+                                quality=movie['releases'][0]['quality']
+                            stringnot=movie['title']+u' est déjà dans votre bibliothèque en '+quality
+                        except:
+                            stringnot=movie['title']+u' est déjà dans votre bibliothèque'
+                        xbmcgui.Dialog().notification(u'Déja dans CouhchPotato', u'Le film '+stringnot, xbmcgui.NOTIFICATION_INFO, 5000)
+                        return
             profile_id = ask_profile()
             if profile_id:
                 success = api.add_wanted(
@@ -331,10 +350,28 @@ def add_new_wanted():
                     movie_identifier=selected_movie['imdb']
                 )
                 if success:
-                    plugin.notify(msg=_('wanted_added'))
                     xbmcgui.Dialog().notification(u'Ajouté', u'Le film '+movie['title']+u' a été ajouté à votre wanted list', xbmcgui.NOTIFICATION_INFO, 5000)
                 else:
                     xbmcgui.Dialog().notification(u'Problème', u"Un problème est sruvenu lors de l'ajout de "+movie['title']+'. Consultez la log de CouchPotato', xbmcgui.NOTIFICATION_INFO, 5000)
+        elif selected < 0:
+            if not wantedpath:
+                xbmcgui.Dialog().notification(u'Répertoire manquant pour wanted list', u'Vous devez spécifiez un répertoire dans les options', xbmcgui.NOTIFICATION_INFO, 5000)
+            else:
+                alreadywanted=[]
+                if os.path.isfile(wantedpath+'\WANTEDMOVIE.txt'):
+                    LF=open(wantedpath+'\WANTEDMOVIE.txt', 'r')
+                    for line in LF:
+                        alreadywanted.append(line.replace('\n',''))
+                    LF.close()
+                if search_title in alreadywanted:
+                    xbmcgui.Dialog().notification('Déjà présent dans fichier wanted', search_title+' est déjà présent dans votre wanted list', xbmcgui.NOTIFICATION_INFO, 5000)
+                else:
+                    LF = open(wantedpath+'\WANTEDMOVIE.txt', 'a')
+                    strtowrite=search_title
+                    LF.write(strtowrite+'\n')
+                    LF.close()
+                    xbmcgui.Dialog().notification('Film ajouté dans fichier wanted', search_title+' ajouté dans votre wanted list', xbmcgui.NOTIFICATION_INFO, 5000)
+            return
 
 @plugin.route('/movies/add-by-id/<imdb_id>')
 def add_new_wanted_by_id(imdb_id,title):
@@ -345,7 +382,6 @@ def add_new_wanted_by_id(imdb_id,title):
             movie_identifier=imdb_id
         )
         if success:
-            plugin.notify(msg=_('wanted_added'))
             xbmcgui.Dialog().notification(u'Ajouté', u'Le film '+title+u' a été ajouté à votre wanted list', xbmcgui.NOTIFICATION_INFO, 5000)
         else:
             xbmcgui.Dialog().notification(u'Problème', u"Un problème est sruvenu lors de l'ajout de "+title+'. Consultez la log de CouchPotato', xbmcgui.NOTIFICATION_INFO, 5000)

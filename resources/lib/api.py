@@ -100,7 +100,7 @@ class CouchPotatoApi():
             'profile_id': profile_id,
             'identifier': movie_identifier
         }
-        return self._api_call('movie.add', params).get('added')
+        return self._api_call('movie.add', params).get('success')
 
     def do_full_refresh(self):
         return self._api_call('searcher.full_search').get('success')
