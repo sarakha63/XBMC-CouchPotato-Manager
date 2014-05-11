@@ -22,7 +22,6 @@ from xbmcswift2 import Plugin, xbmc, xbmcgui
 from resources.lib.api import \
     CouchPotatoApi, AuthenticationError, ConnectionError
 REMOTE_DBG = False
-
 # append pydev remote debugger
 if REMOTE_DBG:
     # Make pydev debugger works for auto reload.
@@ -350,9 +349,9 @@ def add_new_wanted():
                     movie_identifier=selected_movie['imdb']
                 )
                 if success:
-                    xbmcgui.Dialog().notification(u'Ajouté dans CouchPotato', u'Le film '+movie['title']+u' a été ajouté à votre wanted list', xbmcgui.NOTIFICATION_INFO, 5000)
+                    xbmcgui.Dialog().notification(u'Ajouté dans CouchPotato', u'Le film '+search_title+u' a été ajouté à votre wanted list', xbmcgui.NOTIFICATION_INFO, 5000)
                 else:
-                    xbmcgui.Dialog().notification(u'Problème', u"Un problème est sruvenu lors de l'ajout de "+movie['title']+'. Consultez la log de CouchPotato', xbmcgui.NOTIFICATION_INFO, 5000)
+                    xbmcgui.Dialog().notification(u'Problème', u"Un problème est sruvenu lors de l'ajout de "+search_title+'. Consultez la log de CouchPotato', xbmcgui.NOTIFICATION_INFO, 5000)
         elif selected < 0:
             if not wantedpath:
                 xbmcgui.Dialog().notification(u'Répertoire manquant pour wanted list', u'Vous devez spécifiez un répertoire dans les options', xbmcgui.NOTIFICATION_INFO, 5000)
@@ -382,7 +381,7 @@ def add_new_wanted_by_id(imdb_id,title):
             movie_identifier=imdb_id
         )
         if success:
-            xbmcgui.Dialog().notification(u'Ajouté', u'Le film '+title+u' a été ajouté à votre wanted list', xbmcgui.NOTIFICATION_INFO, 5000)
+            xbmcgui.Dialog().notification(u'Ajouté dans CouchPotato', u'Le film '+title.decode("utf-8")+u' a été ajouté à votre wanted list', xbmcgui.NOTIFICATION_INFO, 5000)
         else:
             xbmcgui.Dialog().notification(u'Problème', u"Un problème est sruvenu lors de l'ajout de "+title+'. Consultez la log de CouchPotato', xbmcgui.NOTIFICATION_INFO, 5000)
 
